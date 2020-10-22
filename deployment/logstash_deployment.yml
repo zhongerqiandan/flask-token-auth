@@ -1,0 +1,56 @@
+apiVersion: v1
+data:
+  ES_PASSWORD: jOqGglFRPF2gJVBr
+  ES_URL: http://jarvis-elasticsearch:9200
+  ES_USERNAME: elastic
+kind: ConfigMap
+metadata:
+  name: jarvis-logstash-config
+  namespace: ai-platform
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: jarvis-logstash
+  name: jarvis-logstash
+  namespace: ai-platform
+spec:
+  ports:
+  - name: http
+    port: 8085
+    protocol: UDP
+    targetPort: internal
+  selector:
+    app: jarvis-logstash
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: jarvis-logstash
+  name: jarvis-logstash
+  namespace: ai-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jarvis-logstash
+  template:
+    metadata:
+      labels:
+        app: jarvis-logstash
+      name: jarvis-logstash
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: jarvis-logstash-config
+        image: registry.effyic.com/jarvis-test/jarvis-logstash:1.0.0
+        imagePullPolicy: Always
+        name: jarvis-logstash
+        ports:
+        - containerPort: 8085
+          name: internal
+          protocol: UDP
+      restartPolicy: Always

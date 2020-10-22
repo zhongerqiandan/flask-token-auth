@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jarvis-ai-qqsim
+  labels:
+    app: jarvis-ai-qqsim
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: jarvis-ai-qqsim
+      labels:
+        app: jarvis-ai-qqsim
+    spec:
+      imagePullSecrets:
+        - name: ali-pull-secret
+      containers:
+        - name: jarvis-ai-qqsim-model
+          image: registry.effyic.com/jarvis-test/jarvis-ai-qqsim-model:lcqmc-1.0.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8501
+              name: model-port
+          env:
+            - name: MODEL_NAME
+              value: qqsim
+        - name: jarvis-ai-qqsim-api
+          image: registry.effyic.com/jarvis-test/jarvis-ai-qqsim-api:lcqmc-1.0.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: api-port
+          env:
+            - name: FLASK_APP
+              value: main.py
+            - name: MODEL_HOST_NAME
+              value: localhost
+      restartPolicy: Always
+  selector:
+    matchLabels:
+      app: jarvis-ai-qqsim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jarvis-ai-qqsim
+  labels:
+    app: jarvis-ai-qqsim
+spec:
+  ports:
+    - name: jarvis-ai-qqsim-api
+      port: 80
+      targetPort: api-port
+    - name: jarvis-ai-qqsim-model
+      port: 8501
+      targetPort: model-port
+  selector:
+    app: jarvis-ai-qqsim

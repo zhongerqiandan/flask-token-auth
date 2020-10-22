@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jarvis-ai-intent-classify
+  labels:
+    app: jarvis-ai-intent-classify
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: jarvis-ai-intent-classify
+      labels:
+        app: jarvis-ai-intent-classify
+    spec:
+      imagePullSecrets:
+        - name: ali-pull-secret
+      containers:
+        - name: jarvis-ai-intent-model
+          image: registry.effyic.com/jarvis-test/jarvis-ai-intent-model:lcqmc-1.0.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8501
+              name: model-port
+          env:
+            - name: MODEL_NAME
+              value: intent
+        - name: jarvis-ai-intent-api
+          image: registry.effyic.com/jarvis-test/jarvis-ai-intent-api:lcqmc-1.0.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: api-port
+          env:
+            - name: FLASK_APP
+              value: main.py
+            - name: MODEL_HOST_NAME
+              value: localhost
+      restartPolicy: Always
+  selector:
+    matchLabels:
+      app: jarvis-ai-intent-classify
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jarvis-ai-intent-classify
+  labels:
+    app: jarvis-ai-intent-classify
+spec:
+  ports:
+    - name: jarvis-ai-intent-api
+      port: 80
+      targetPort: api-port
+    - name: jarvis-ai-intent-model
+      port: 8501
+      targetPort: model-port
+  selector:
+    app: jarvis-ai-intent-classify

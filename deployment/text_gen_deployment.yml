@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jarvis-ai-sim-gen
+  labels:
+    app: jarvis-ai-sim-gen
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: jarvis-ai-sim-gen
+      labels:
+        app: jarvis-ai-sim-gen
+    spec:
+      imagePullSecrets:
+        - name: ali-pull-secret
+      containers:
+        - name: jarvis-ai-sim-gen
+          image: registry.effyic.com/jarvis-test/jarvis-ai-sim-gen:unilm1.0.1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: api-port
+          env:
+            - name: FLASK_APP
+              value: predict.py
+      restartPolicy: Always
+  selector:
+    matchLabels:
+      app: jarvis-ai-sim-gen
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jarvis-ai-sim-gen
+  labels:
+    app: jarvis-ai-sim-gen
+spec:
+  ports:
+    - name: jarvis-ai-sim-gen
+      port: 80
+      targetPort: api-port
+  selector:
+    app: jarvis-ai-sim-gen

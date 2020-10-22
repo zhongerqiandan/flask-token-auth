@@ -1,0 +1,84 @@
+apiVersion: v1
+data:
+  ELASTIC_PASSWORD: jOqGglFRPF2gJVBr
+  discovery.type: single-node
+  xpack.security.enabled: "true"
+kind: ConfigMap
+metadata:
+  name: jarvis-elasticsearch-config
+  namespace: ai-platform
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: jarvis-elasticsearch
+  name: jarvis-elasticsearch
+  namespace: ai-platform
+spec:
+  ports:
+  - name: http
+    port: 9200
+    targetPort: 9200
+  selector:
+    app: jarvis-elasticsearch
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: jarvis-elasticsearch-pvc
+  name: jarvis-elasticsearch-pvc
+  namespace: ai-platform
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: rook-ceph-block
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: jarvis-elasticsearch
+  name: jarvis-elasticsearch
+  namespace: ai-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jarvis-elasticsearch
+  template:
+    metadata:
+      labels:
+        app: jarvis-elasticsearch
+      name: jarvis-elasticsearch
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: jarvis-elasticsearch-config
+        image: registry.effyic.com/jarvis-test/jarvis-es:1.0.0
+        imagePullPolicy: Always
+        name: jarvis-elasticsearch
+        ports:
+        - containerPort: 9200
+        volumeMounts:
+        - mountPath: /usr/share/elasticsearch/data
+          name: jarvis-elasticsearch-data
+      initContainers:
+      - command:
+        - sysctl
+        - -w
+        - vm.max_map_count=262144
+        image: busybox
+        name: increase-vm-max-map
+        securityContext:
+          privileged: true
+      restartPolicy: Always
+      volumes:
+      - name: jarvis-elasticsearch-data
+        persistentVolumeClaim:
+          claimName: jarvis-elasticsearch-pvc

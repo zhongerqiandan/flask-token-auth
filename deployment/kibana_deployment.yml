@@ -1,0 +1,54 @@
+apiVersion: v1
+data:
+  ELASTICSEARCH_HOSTS: http://jarvis-elasticsearch:9200
+  ELASTICSEARCH_PASSWORD: jOqGglFRPF2gJVBr
+  ELASTICSEARCH_USERNAME: elastic
+  xpack.security.enabled: "true"
+kind: ConfigMap
+metadata:
+  name: jarvis-kibana-config
+  namespace: ai-platform
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: jarvis-kibana
+  name: jarvis-kibana
+  namespace: ai-platform
+spec:
+  ports:
+  - name: http
+    port: 5061
+    targetPort: 5601
+  selector:
+    app: jarvis-kibana
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: jarvis-kibana
+  name: jarvis-kibana
+  namespace: ai-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jarvis-kibana
+  template:
+    metadata:
+      labels:
+        app: jarvis-kibana
+      name: jarvis-kibana
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: jarvis-kibana-config
+        image: registry.effyic.com/jarvis-test/jarvis-kibana:1.0.0
+        imagePullPolicy: IfNotPresent
+        name: jarvis-kibana
+        ports:
+        - containerPort: 5601
+      restartPolicy: Always

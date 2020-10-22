@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-platform
+  labels:
+    app: ai-platform
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: ai-platform
+      labels:
+        app: ai-platform
+    spec:
+      imagePullSecrets:
+        - name: registry-secret
+      containers:
+        - name: ai-platform
+          image: registry.effyic.com/jarvis-test/ai-platform:1.0.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: "1024Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2048Mi"
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          env:
+            - name: FLASK_APP
+              value: main.py
+            - name: INTENT_CLASSIFY_SERVICE_URL
+              value: http://jarvis-ai-intent-classify/intent
+            - name: QQ_SIM_SERVICE_URL
+              value: http://jarvis-ai-qqsim/qqsim
+            - name: SIM_GEN_SERVICE_URL
+              value: http://jarvis-ai-sim-gen/simgenerate
+            - name: TOKEN_DURATION
+              value: '720'
+            - name: ADMIN
+              value: root
+            - name: ADMIN_PASSWORD
+              value: Qud9ydOVX0ytLC6X
+            - name: SECRET_KEY
+              value: 'wreL0I1nHPk6K6H5Nlay782vuHO1CGIQEEGe'
+            - name: MYSQL_HOST_NAME
+              value: jarvis-mysql
+            - name: MYSQL_USER_NAME
+              value: root
+            - name: MYSQL_USER_PASSWORD
+              value: tNAMAMI95vbl1efp
+            - name: MYSQL_DB
+              value: app
+            - name: MYSQL_PORT
+              value: '3306'
+            - name: DIALECT
+              value: mysql
+            - name: DRIVER
+              value: pymysql
+            - name: LOGSTASH_HOST
+              value: jarvis-logstash
+            - name: LOGSTASH_PORT
+              value: "8085"
+
+      restartPolicy: Always
+  selector:
+    matchLabels:
+      app: ai-platform
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-platform
+  labels:
+    app: ai-platform
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+  selector:
+    app: ai-platform
